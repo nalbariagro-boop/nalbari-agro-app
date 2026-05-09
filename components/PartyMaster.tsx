@@ -102,10 +102,7 @@ export default function PartyMaster({
           onChange={(e) =>
             update('name', e.target.value)
           }
-          readOnly={Boolean(editingId)}
-          className={`${inputClass} ${
-            editingId ? 'bg-slate-100 text-slate-700' : ''
-          }`}
+          className={inputClass}
         />
 
         <input

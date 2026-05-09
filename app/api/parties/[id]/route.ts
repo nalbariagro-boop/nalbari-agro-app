@@ -24,6 +24,7 @@ export async function PATCH(
     const { id } = await context.params;
     const partyId = numericId(id);
     const party = (await request.json()) as Partial<Party>;
+    const name = trimmedString(party.name, 200);
     const phone = optionalString(party.phone, 50);
     const area = optionalString(party.area, 200);
     const bank = optionalString(party.bank, 200);
@@ -34,7 +35,7 @@ export async function PATCH(
       return Response.json({ error: "Invalid party id" }, { status: 400 });
     }
 
-    if (phone === null || area === null || bank === null || accountNumber === null || notes === null) {
+    if (!name || phone === null || area === null || bank === null || accountNumber === null || notes === null) {
       return Response.json({ error: "Invalid party details" }, { status: 400 });
     }
 
@@ -48,26 +49,42 @@ export async function PATCH(
       return Response.json({ error: "Party not found" }, { status: 404 });
     }
 
-    const name = trimmedString(party.name, 200);
+    const updated = await prisma.$transaction(async (tx) => {
+      const nextParty = await tx.party.update({
+        where: {
+          id: partyId,
+        },
+        data: {
+          name,
+          phone,
+          area,
+          bank,
+          accountNumber,
+          notes,
+        },
+      });
 
-    if (name && name !== existing.name) {
-      return Response.json(
-        { error: "Party name cannot be changed" },
-        { status: 400 }
-      );
-    }
+      if (name !== existing.name) {
+        await tx.timingReport.updateMany({
+          where: {
+            partyId,
+          },
+          data: {
+            party: name,
+          },
+        });
 
-    const updated = await prisma.party.update({
-      where: {
-        id: partyId,
-      },
-      data: {
-        phone,
-        area,
-        bank,
-        accountNumber,
-        notes,
-      },
+        await tx.ledgerEntry.updateMany({
+          where: {
+            partyId,
+          },
+          data: {
+            party: name,
+          },
+        });
+      }
+
+      return nextParty;
     });
 
     return Response.json(updated);

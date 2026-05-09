@@ -2,10 +2,14 @@
   "name": "nalbari-agro-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+  "node": "22.x"
+},
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:create-auth": "node prisma/create-auth-schema.mjs",
@@ -13,7 +17,7 @@
     "prisma:seed": "node prisma/seed-users.mjs",
     "prisma:studio": "prisma studio",
     "lint": "eslint"
-  },
+},
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
